@@ -136,6 +136,64 @@ def digits_read(im, check=False):
     #return all digits found
     return samples
 
+def digits_read_black(im, check=False):
+    #copy becuase will be edited
+    img = im.copy()
+
+    #make an output, convert to grayscale and apply thresh-hold
+    out = np.zeros(im.shape,np.uint8)
+    gray = cv2.cvtColor(im,cv2.COLOR_BGR2GRAY)
+    ret,thresh = cv2.threshold(gray, 0, 255,cv2.THRESH_OTSU|cv2.THRESH_BINARY)
+
+    #find conours
+    contours,hierarchy = cv2.findContours(thresh,cv2.RETR_LIST,cv2.CHAIN_APPROX_SIMPLE)
+
+    #create empty return list
+    samples =  np.empty((0,100))
+
+    #for every contour if area large enoug to be digit add the box to list
+    li = []
+    for cnt in contours:
+        if cv2.contourArea(cnt)>20:
+            [x,y,w,h] = cv2.boundingRect(cnt)
+            li.append([x,y,w,h])
+    #sort list so it read from right to left
+    li = sorted(li,key=lambda x: x[0], reverse=True)
+
+    #loop over all digits
+    for i in li:
+        #unpack data
+        x,y,w,h = i[0], i[1], i[2], i[3]
+
+        #cehck if large enough to be digit but small enough to ignore rest
+        if  h>17 and h<40 and w<40:
+
+            #draw rectangle with thresh-hold and shape correct form
+            cv2.rectangle(im,(x,y),(x+w,y+h),(0,255,0),2)
+            roi = thresh[y:y+h,x:x+w]
+            roismall = cv2.resize(roi,(10,10))
+            sample = roismall.reshape((1,100))
+            samples = np.append(samples,sample,0)
+
+            #if user wants images shown
+            if show_img:
+                cv2.namedWindow('1',cv2.WINDOW_NORMAL)
+                cv2.resizeWindow('1', 1600,600)
+                cv2.imshow('1', im)
+                #show for 100 ms and check if exit called (esc key)
+                key = cv2.waitKey(0)
+                if key == 27:
+                    sys.exit()
+                #print what the NN would classify the digits as
+                print(int(classify(samples)))
+    
+    #if full number lower than 10m, add to wrongly classified list
+    if check == True and int(classify(samples)) < 10000000:
+        img_list.append([im, int(classify(samples))])
+    #return all digits found
+    return samples
+
+
 def similar(a, b):
     return SequenceMatcher(None, a, b).ratio()
 
@@ -187,41 +245,66 @@ for j in dirs:
 
         #read image and zoom in on power
         img = cv2.imread(fn)
-        img = img[0:1600, 0:2500]
+        img = img[0:1080, 0:2300]
 
         ####CHARS
-        name = img[260:400, 600:1100]
+        name = img[145:240, 650:1050]
         data = chars_read(name)
         data = ''.join(str(elem) for elem in data)
         player.append(data)
 
         ####DIGITS	
-        power = img[270:370, 1300:1700]
+        power = img[150:220, 1186:1400]
         data = digits_read(power, True)
         data = int(classify(data))
         player.append(data)
 
-        kills = img[270:390, 1835:2250]
+        kills = img[150:220, 1588:1750]
         data = digits_read(kills)
         data = int(classify(data))
         player.append(data)
 
-        victories = img[570:670, 1930:2110]
-        data = digits_read(victories)
+        kills_one = img[325:360, 1360:1490]
+        data = digits_read_black(kills_one)
         data = int(classify(data))
         player.append(data)
 
-        dead = img[770:860, 1900:2150]
+        kills_two = img[325:360, 1540:1685]
+        data = digits_read_black(kills_two)
+        data = int(classify(data))
+        player.append(data)
+
+        kills_three = img[375:410, 1360:1490]
+        data = digits_read_black(kills_three)
+        data = int(classify(data))
+        player.append(data)
+
+        kills_four = img[375:410, 1540:1685]
+        data = digits_read_black(kills_four)
+        data = int(classify(data))
+        player.append(data)
+
+        kills_five = img[425:460, 1360:1490]
+        data = digits_read_black(kills_five)
+        data = int(classify(data))
+        player.append(data)
+
+        dead = img[520:590, 1610:1800]
         data = digits_read(dead)
         data = int(classify(data))
         player.append(data)
 
-        rss_ass = img[1130:1240, 1800:2100]
+        rss_gath = img[730:790, 1570:1800]
+        data = digits_read(rss_gath)
+        data = int(classify(data))
+        player.append(data)
+
+        rss_ass = img[800:860, 1570:1800]
         data = digits_read(rss_ass)
         data = int(classify(data))
         player.append(data)
 
-        alliance_help = img[1250:1330, 1850:2100]
+        alliance_help = img[870:930, 1650:1800]
         data = digits_read(alliance_help)
         data = int(classify(data))
         player.append(data)
@@ -250,7 +333,7 @@ for j in dirs:
                 
 
 
-players.insert(0,['Player name', 'Power (old)', 'Kills (old)', 'Victories (old)', 'Dead (old)', 'Rss-assistance (old)', 'Alliance help (old)', 'Power (new)', 'Kills (new)', 'Victories (new)', 'Dead (new)', 'Rss-assistance (new)', 'Alliance help (new)'])
+players.insert(0,['Player name', 'Power (old)', 'Kills total (old)', 'Kills Tier 1 (old)', 'Kills Tier 2 (old)', 'Kills Tier 3 (old)', 'Kills Tier 4 (old)', 'Kills Tier 5 (old)', 'Dead (old)', 'Rss-gathered (old)','Rss-assistance (old)', 'Alliance help (old)', 'Power (new)', 'Kills total (new)', 'Kills Tier 1 (new)', 'Kills Tier 2 (new)', 'Kills Tier 3 (new)', 'Kills Tier 4 (new)', 'Kills Tier 5 (new)', 'Dead (new)', 'Rss-gathered (new)', 'Rss-assistance (new)', 'Alliance help (new)'])
 #handle wrongly classified cases 
 print(f"Could not read {len(img_list)} numbers. They will be shown to you, type them please!")
 print("You can use enter to submit number and backspace to delete and escape to quit")

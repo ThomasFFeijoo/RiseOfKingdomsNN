@@ -136,9 +136,11 @@ def digits_read(im, height, img_type, check=False):
     #return all digits found
     return samples
 
+#wrapper for white digits
 def digits_read_white(im, check=False):
     return digits_read(im, 20, cv2.THRESH_OTSU|cv2.THRESH_BINARY_INV, check)
 
+#wrapper for black digits
 def digits_read_black(im, check=False):
     return digits_read(im, 17, cv2.THRESH_OTSU|cv2.THRESH_BINARY, check)
 

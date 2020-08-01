@@ -79,14 +79,14 @@ def classify_name(data):
 img_list = []
 
 #takes an image and returns array with all digits pixels in it
-def digits_read(im, check=False):
+def digits_read(im, height, img_type, check=False):
     #copy becuase will be edited
     img = im.copy()
 
     #make an output, convert to grayscale and apply thresh-hold
     out = np.zeros(im.shape,np.uint8)
     gray = cv2.cvtColor(im,cv2.COLOR_BGR2GRAY)
-    ret,thresh = cv2.threshold(gray, 0, 255,cv2.THRESH_OTSU|cv2.THRESH_BINARY_INV)
+    ret,thresh = cv2.threshold(gray, 0, 255,img_type)
 
     #find conours
     contours,hierarchy = cv2.findContours(thresh,cv2.RETR_LIST,cv2.CHAIN_APPROX_SIMPLE)
@@ -109,7 +109,7 @@ def digits_read(im, check=False):
         x,y,w,h = i[0], i[1], i[2], i[3]
 
         #cehck if large enough to be digit but small enough to ignore rest
-        if  h>20 and h<40 and w<40:
+        if  h>height and h<40 and w<40:
 
             #draw rectangle with thresh-hold and shape correct form
             cv2.rectangle(im,(x,y),(x+w,y+h),(0,255,0),2)
@@ -135,64 +135,12 @@ def digits_read(im, check=False):
         img_list.append([im, int(classify(samples))])
     #return all digits found
     return samples
+
+def digits_read_white(im, check=False):
+    return digits_read(im, 20, cv2.THRESH_OTSU|cv2.THRESH_BINARY_INV, check)
 
 def digits_read_black(im, check=False):
-    #copy becuase will be edited
-    img = im.copy()
-
-    #make an output, convert to grayscale and apply thresh-hold
-    out = np.zeros(im.shape,np.uint8)
-    gray = cv2.cvtColor(im,cv2.COLOR_BGR2GRAY)
-    ret,thresh = cv2.threshold(gray, 0, 255,cv2.THRESH_OTSU|cv2.THRESH_BINARY)
-
-    #find conours
-    contours,hierarchy = cv2.findContours(thresh,cv2.RETR_LIST,cv2.CHAIN_APPROX_SIMPLE)
-
-    #create empty return list
-    samples =  np.empty((0,100))
-
-    #for every contour if area large enoug to be digit add the box to list
-    li = []
-    for cnt in contours:
-        if cv2.contourArea(cnt)>20:
-            [x,y,w,h] = cv2.boundingRect(cnt)
-            li.append([x,y,w,h])
-    #sort list so it read from right to left
-    li = sorted(li,key=lambda x: x[0], reverse=True)
-
-    #loop over all digits
-    for i in li:
-        #unpack data
-        x,y,w,h = i[0], i[1], i[2], i[3]
-
-        #cehck if large enough to be digit but small enough to ignore rest
-        if  h>17 and h<40 and w<40:
-
-            #draw rectangle with thresh-hold and shape correct form
-            cv2.rectangle(im,(x,y),(x+w,y+h),(0,255,0),2)
-            roi = thresh[y:y+h,x:x+w]
-            roismall = cv2.resize(roi,(10,10))
-            sample = roismall.reshape((1,100))
-            samples = np.append(samples,sample,0)
-
-            #if user wants images shown
-            if show_img:
-                cv2.namedWindow('1',cv2.WINDOW_NORMAL)
-                cv2.resizeWindow('1', 1600,600)
-                cv2.imshow('1', im)
-                #show for 100 ms and check if exit called (esc key)
-                key = cv2.waitKey(0)
-                if key == 27:
-                    sys.exit()
-                #print what the NN would classify the digits as
-                print(int(classify(samples)))
-    
-    #if full number lower than 10m, add to wrongly classified list
-    if check == True and int(classify(samples)) < 10000000:
-        img_list.append([im, int(classify(samples))])
-    #return all digits found
-    return samples
-
+    return digits_read(im, 17, cv2.THRESH_OTSU|cv2.THRESH_BINARY, check)
 
 def similar(a, b):
     return SequenceMatcher(None, a, b).ratio()
@@ -255,12 +203,12 @@ for j in dirs:
 
         ####DIGITS	
         power = img[150:220, 1186:1400]
-        data = digits_read(power, True)
+        data = digits_read_white(power, True)
         data = int(classify(data))
         player.append(data)
 
         kills = img[150:220, 1588:1750]
-        data = digits_read(kills)
+        data = digits_read_white(kills)
         data = int(classify(data))
         player.append(data)
 
@@ -290,22 +238,22 @@ for j in dirs:
         player.append(data)
 
         dead = img[520:590, 1610:1800]
-        data = digits_read(dead)
+        data = digits_read_white(dead)
         data = int(classify(data))
         player.append(data)
 
         rss_gath = img[730:790, 1570:1800]
-        data = digits_read(rss_gath)
+        data = digits_read_white(rss_gath)
         data = int(classify(data))
         player.append(data)
 
         rss_ass = img[800:860, 1570:1800]
-        data = digits_read(rss_ass)
+        data = digits_read_white(rss_ass)
         data = int(classify(data))
         player.append(data)
 
         alliance_help = img[870:930, 1650:1800]
-        data = digits_read(alliance_help)
+        data = digits_read_white(alliance_help)
         data = int(classify(data))
         player.append(data)
 

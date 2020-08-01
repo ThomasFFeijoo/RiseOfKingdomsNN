@@ -79,14 +79,14 @@ def classify_name(data):
 img_list = []
 
 #takes an image and returns array with all digits pixels in it
-def digits_read(im, check=False):
+def digits_read(im, height, img_type, check=False):
     #copy becuase will be edited
     img = im.copy()
 
     #make an output, convert to grayscale and apply thresh-hold
     out = np.zeros(im.shape,np.uint8)
     gray = cv2.cvtColor(im,cv2.COLOR_BGR2GRAY)
-    ret,thresh = cv2.threshold(gray, 0, 255,cv2.THRESH_OTSU|cv2.THRESH_BINARY_INV)
+    ret,thresh = cv2.threshold(gray, 0, 255,img_type)
 
     #find conours
     contours,hierarchy = cv2.findContours(thresh,cv2.RETR_LIST,cv2.CHAIN_APPROX_SIMPLE)
@@ -109,7 +109,7 @@ def digits_read(im, check=False):
         x,y,w,h = i[0], i[1], i[2], i[3]
 
         #cehck if large enough to be digit but small enough to ignore rest
-        if  h>20 and h<40 and w<40:
+        if  h>height and h<40 and w<40:
 
             #draw rectangle with thresh-hold and shape correct form
             cv2.rectangle(im,(x,y),(x+w,y+h),(0,255,0),2)
@@ -135,6 +135,14 @@ def digits_read(im, check=False):
         img_list.append([im, int(classify(samples))])
     #return all digits found
     return samples
+
+#wrapper for white digits
+def digits_read_white(im, check=False):
+    return digits_read(im, 20, cv2.THRESH_OTSU|cv2.THRESH_BINARY_INV, check)
+
+#wrapper for black digits
+def digits_read_black(im, check=False):
+    return digits_read(im, 17, cv2.THRESH_OTSU|cv2.THRESH_BINARY, check)
 
 def similar(a, b):
     return SequenceMatcher(None, a, b).ratio()
@@ -187,42 +195,67 @@ for j in dirs:
 
         #read image and zoom in on power
         img = cv2.imread(fn)
-        img = img[0:1600, 0:2500]
+        img = img[0:1080, 0:2300]
 
         ####CHARS
-        name = img[260:400, 600:1100]
+        name = img[145:240, 650:1050]
         data = chars_read(name)
         data = ''.join(str(elem) for elem in data)
         player.append(data)
 
         ####DIGITS	
-        power = img[270:370, 1300:1700]
-        data = digits_read(power, True)
+        power = img[150:220, 1186:1400]
+        data = digits_read_white(power, True)
         data = int(classify(data))
         player.append(data)
 
-        kills = img[270:390, 1835:2250]
-        data = digits_read(kills)
+        kills = img[150:220, 1588:1750]
+        data = digits_read_white(kills)
         data = int(classify(data))
         player.append(data)
 
-        victories = img[570:670, 1930:2110]
-        data = digits_read(victories)
+        kills_one = img[325:360, 1360:1490]
+        data = digits_read_black(kills_one)
         data = int(classify(data))
         player.append(data)
 
-        dead = img[770:860, 1900:2150]
-        data = digits_read(dead)
+        kills_two = img[325:360, 1540:1685]
+        data = digits_read_black(kills_two)
         data = int(classify(data))
         player.append(data)
 
-        rss_ass = img[1130:1240, 1800:2100]
-        data = digits_read(rss_ass)
+        kills_three = img[375:410, 1360:1490]
+        data = digits_read_black(kills_three)
         data = int(classify(data))
         player.append(data)
 
-        alliance_help = img[1250:1330, 1850:2100]
-        data = digits_read(alliance_help)
+        kills_four = img[375:410, 1540:1685]
+        data = digits_read_black(kills_four)
+        data = int(classify(data))
+        player.append(data)
+
+        kills_five = img[425:460, 1360:1490]
+        data = digits_read_black(kills_five)
+        data = int(classify(data))
+        player.append(data)
+
+        dead = img[520:590, 1610:1800]
+        data = digits_read_white(dead)
+        data = int(classify(data))
+        player.append(data)
+
+        rss_gath = img[730:790, 1570:1800]
+        data = digits_read_white(rss_gath)
+        data = int(classify(data))
+        player.append(data)
+
+        rss_ass = img[800:860, 1570:1800]
+        data = digits_read_white(rss_ass)
+        data = int(classify(data))
+        player.append(data)
+
+        alliance_help = img[870:930, 1650:1800]
+        data = digits_read_white(alliance_help)
         data = int(classify(data))
         player.append(data)
 
@@ -250,7 +283,7 @@ for j in dirs:
                 
 
 
-players.insert(0,['Player name', 'Power (old)', 'Kills (old)', 'Victories (old)', 'Dead (old)', 'Rss-assistance (old)', 'Alliance help (old)', 'Power (new)', 'Kills (new)', 'Victories (new)', 'Dead (new)', 'Rss-assistance (new)', 'Alliance help (new)'])
+players.insert(0,['Player name', 'Power (old)', 'Kills total (old)', 'Kills Tier 1 (old)', 'Kills Tier 2 (old)', 'Kills Tier 3 (old)', 'Kills Tier 4 (old)', 'Kills Tier 5 (old)', 'Dead (old)', 'Rss-gathered (old)','Rss-assistance (old)', 'Alliance help (old)', 'Power (new)', 'Kills total (new)', 'Kills Tier 1 (new)', 'Kills Tier 2 (new)', 'Kills Tier 3 (new)', 'Kills Tier 4 (new)', 'Kills Tier 5 (new)', 'Dead (new)', 'Rss-gathered (new)', 'Rss-assistance (new)', 'Alliance help (new)'])
 #handle wrongly classified cases 
 print(f"Could not read {len(img_list)} numbers. They will be shown to you, type them please!")
 print("You can use enter to submit number and backspace to delete and escape to quit")

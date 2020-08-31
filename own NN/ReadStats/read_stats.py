@@ -9,6 +9,8 @@ from collections import Counter
 from os import listdir
 import csv
 from difflib import SequenceMatcher
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 show_img = False
 #takes an image and returns array with all chars in it
 def chars_read(im):
@@ -19,6 +21,7 @@ def chars_read(im):
     out = np.zeros(im.shape,np.uint8)
     gray = cv2.cvtColor(im,cv2.COLOR_BGR2GRAY)
     ret,thresh = cv2.threshold(gray, 0, 255,cv2.THRESH_OTSU+cv2.THRESH_BINARY_INV)
+    
     #find conours
     contours,hierarchy = cv2.findContours(thresh,cv2.RETR_LIST,cv2.CHAIN_APPROX_SIMPLE)
 
@@ -86,8 +89,10 @@ def digits_read(im, height, img_type, check=False):
     #make an output, convert to grayscale and apply thresh-hold
     out = np.zeros(im.shape,np.uint8)
     gray = cv2.cvtColor(im,cv2.COLOR_BGR2GRAY)
+    
     ret,thresh = cv2.threshold(gray, 0, 255,img_type)
-
+    if (height == 17):
+        thresh = cv2.adaptiveThreshold(gray,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,3,2)
     #find conours
     contours,hierarchy = cv2.findContours(thresh,cv2.RETR_LIST,cv2.CHAIN_APPROX_SIMPLE)
 
@@ -107,7 +112,6 @@ def digits_read(im, height, img_type, check=False):
     for i in li:
         #unpack data
         x,y,w,h = i[0], i[1], i[2], i[3]
-
         #cehck if large enough to be digit but small enough to ignore rest
         if  h>height and h<40 and w<40:
 
@@ -131,14 +135,14 @@ def digits_read(im, height, img_type, check=False):
                 print(int(classify(samples)))
     
     #if full number lower than 10m, add to wrongly classified list
-    if check == True and int(classify(samples)) < 10000000:
+    if check == True and int(classify(samples)) < 1000000 and int(classify(samples)) > 0:
         img_list.append([im, int(classify(samples))])
     #return all digits found
     return samples
 
 #wrapper for white digits
 def digits_read_white(im, check=False):
-    return digits_read(im, 20, cv2.THRESH_OTSU|cv2.THRESH_BINARY_INV, check)
+    return digits_read(im, 19, cv2.THRESH_OTSU|cv2.THRESH_BINARY_INV, check)
 
 #wrapper for black digits
 def digits_read_black(im, check=False):
@@ -188,73 +192,68 @@ list_active = False
 old_list_names = []
 #loop over all images
 for j in dirs:
-    img_mask = f'TestingPictures/{j}/*.jpg'
+    img_mask = f'TestingPictures/{j}/*.png'
     img_names = glob(img_mask)
     for fn in img_names:
         player = []
 
         #read image and zoom in on power
         img = cv2.imread(fn)
-        img = img[0:1080, 0:2300]
+        img = img[0:1080, 0:1920]
 
         ####CHARS
-        name = img[145:240, 650:1050]
+        name = img[145:220, 465:750]
         data = chars_read(name)
         data = ''.join(str(elem) for elem in data)
         player.append(data)
-
+        
         ####DIGITS	
-        power = img[150:220, 1186:1400]
+        power = img[170:220, 975:1170]
         data = digits_read_white(power, True)
         data = int(classify(data))
         player.append(data)
 
-        kills = img[150:220, 1588:1750]
+        kills = img[170:220, 1375:1560]
         data = digits_read_white(kills)
         data = int(classify(data))
         player.append(data)
 
-        kills_one = img[325:360, 1360:1490]
+        kills_one = img[325:360, 1150:1280]
         data = digits_read_black(kills_one)
         data = int(classify(data))
         player.append(data)
 
-        kills_two = img[325:360, 1540:1685]
-        data = digits_read_black(kills_two)
-        data = int(classify(data))
-        player.append(data)
-
-        kills_three = img[375:410, 1360:1490]
+        kills_three = img[375:410, 1150:1280]
         data = digits_read_black(kills_three)
         data = int(classify(data))
         player.append(data)
 
-        kills_four = img[375:410, 1540:1685]
+        kills_four = img[375:404, 1330:1470]
         data = digits_read_black(kills_four)
         data = int(classify(data))
         player.append(data)
 
-        kills_five = img[425:460, 1360:1490]
+        kills_five = img[425:460, 1150:1280]
         data = digits_read_black(kills_five)
         data = int(classify(data))
         player.append(data)
 
-        dead = img[520:590, 1610:1800]
+        dead = img[520:590, 1310:1565]
         data = digits_read_white(dead)
         data = int(classify(data))
         player.append(data)
 
-        rss_gath = img[730:790, 1570:1800]
+        rss_gath = img[730:790, 1310:1565]
         data = digits_read_white(rss_gath)
         data = int(classify(data))
         player.append(data)
 
-        rss_ass = img[800:860, 1570:1800]
+        rss_ass = img[800:860, 1310:1565]
         data = digits_read_white(rss_ass)
         data = int(classify(data))
         player.append(data)
 
-        alliance_help = img[870:930, 1650:1800]
+        alliance_help = img[870:930, 1310:1565]
         data = digits_read_white(alliance_help)
         data = int(classify(data))
         player.append(data)
@@ -283,7 +282,7 @@ for j in dirs:
                 
 
 
-players.insert(0,['Player name', 'Power (old)', 'Kills total (old)', 'Kills Tier 1 (old)', 'Kills Tier 2 (old)', 'Kills Tier 3 (old)', 'Kills Tier 4 (old)', 'Kills Tier 5 (old)', 'Dead (old)', 'Rss-gathered (old)','Rss-assistance (old)', 'Alliance help (old)', 'Power (new)', 'Kills total (new)', 'Kills Tier 1 (new)', 'Kills Tier 2 (new)', 'Kills Tier 3 (new)', 'Kills Tier 4 (new)', 'Kills Tier 5 (new)', 'Dead (new)', 'Rss-gathered (new)', 'Rss-assistance (new)', 'Alliance help (new)'])
+players.insert(0,['Player name', 'Power (22-08)', 'Kills total (22-08)', 'Kills Tier 1 (22-08)', 'Kills Tier 3 (22-08)', 'Kills Tier 4 (22-08)', 'Kills Tier 5 (22-08)', 'Dead (22-08)', 'Rss-gathered (22-08)','Rss-assistance (22-08)', 'Alliance help (22-08)', 'Power (26-08)', 'Kills total (26-08)', 'Kills Tier 1 (26-08)', 'Kills Tier 3 (26-08)', 'Kills Tier 4 (26-08)', 'Kills Tier 5 (26-08)', 'Dead (26-08)', 'Rss-gathered (26-08)', 'Rss-assistance (26-08)', 'Alliance help (26-08)'])
 #handle wrongly classified cases 
 print(f"Could not read {len(img_list)} numbers. They will be shown to you, type them please!")
 print("You can use enter to submit number and backspace to delete and escape to quit")
